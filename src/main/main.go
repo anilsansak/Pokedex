@@ -91,48 +91,36 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 func typeHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("/types url:", r.URL)
 	fmt.Fprint(w, "All of the pokemon types\n")
-	/*bd := getData()
-	fmt.Fprint(w, bd.Name)*/
-	content, err := ioutil.ReadFile("data.json")
-	if err != nil {
-		fmt.Print("Error:", err)
-	}
-	//var basedata BaseData
-	m := make(map[string]interface{})
-	//err = json.Unmarshal([]byte(content), &basedata)
-	err = json.Unmarshal(content, &m)
-	if err != nil {
-		fmt.Print("Error:", err)
-	}
-	fmt.Fprint(w, m["types"])
+	bd := getData()
+	fmt.Fprint(w, bd.Types)
 
 }
 
 func otherwise(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "Hello World\n")
+	fmt.Fprint(w, "Welcome to Pokedex\n")
 
 }
 
-/*func getData() {
+func getData() BaseData {
 	log.Println("getData called")
 	content, err := ioutil.ReadFile("data.json")
 	if err != nil {
 		fmt.Print("Error:", err)
 	}
-	//var basedata BaseData
-	m := make(map[string]interface{})
-	//err = json.Unmarshal([]byte(content), &basedata)
-	err = json.Unmarshal(content, &m)
+	var basedata BaseData
+	//m := make(map[string]interface{})
+	err = json.Unmarshal([]byte(content), &basedata)
+	//err = json.Unmarshal(content, &m)
 	if err != nil {
 		fmt.Print("Error:", err)
 	}
-	return m
-}*/
+	return basedata
+}
 
 func main() {
 	//TODO: read data.json to a BaseData
 
-	//getData()
+	getData()
 
 	http.HandleFunc("/list", listHandler)
 	http.HandleFunc("/get", getHandler)
