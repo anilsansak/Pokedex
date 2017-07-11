@@ -100,6 +100,12 @@ func pokemonHandler(w http.ResponseWriter, r *http.Request) {
 	bd := getData()
 	fmt.Fprint(w, bd.Pokemons)
 }
+func moveHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("/moves url:", r.URL)
+	fmt.Fprint(w, "All moves\n")
+	bd := getData()
+	fmt.Fprint(w, bd.Moves)
+}
 func otherwise(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Welcome to Pokedex\n")
 
@@ -130,6 +136,7 @@ func main() {
 	http.HandleFunc("/get", getHandler)
 	http.HandleFunc("/types", typeHandler)
 	http.HandleFunc("/pokemons", pokemonHandler)
+	http.HandleFunc("/moves", moveHandler)
 	//TODO: add more
 	http.HandleFunc("/", otherwise)
 	log.Println("starting server on :8080")
