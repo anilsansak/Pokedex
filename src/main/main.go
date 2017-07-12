@@ -16,7 +16,6 @@ type Type struct {
 	// The weak basedata that against, damage multiplize 0.5x
 	WeakAgainst []string `json:"weakAgainst"`
 }
-type arr []string
 
 type Pokemon struct {
 	Number         string   `json:"Number"`
@@ -118,6 +117,36 @@ func typeHandler(w http.ResponseWriter, r *http.Request) {
 func pokemonHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("/pokemons url:", r.URL)
 	fmt.Fprint(w, "All pokemons\n")
+	m := getData()
+
+	n := m["pokemons"].([]interface{})
+	//pokemons := make([]*Pokemon, len(n))
+
+	for i := range n {
+		number := n[i].(map[string]interface{})["Number"].(string)
+		name := n[i].(map[string]interface{})["Name"].(string)
+		classification := n[i].(map[string]interface{})["Classification"].(string)
+		type1 := n[i].(map[string]interface{})["Type I"].([]interface{})
+		type2 := n[i].(map[string]interface{})["Type II"]
+		weaknesses := n[i].(map[string]interface{})["Weaknesses"].([]interface{})
+		fastattacks := n[i].(map[string]interface{})["Fast Attack(s)"].([]interface{})
+		weight := n[i].(map[string]interface{})["Weight"].(string)
+		height := n[i].(map[string]interface{})["Height"].(string)
+
+		//pokemons[i] = &Pokemon{number, name, classification, type1, type2, weaknesses, fastattacks, weight, height}
+		//fmt.Fprintln(w, pokemons[i])
+		//fmt.Fprintln(w, "\nName:", types[i].Name)
+		fmt.Fprintln(w, "\nName:", name)
+		fmt.Fprintln(w, "Number:", number)
+		fmt.Fprintln(w, "Classification:", classification)
+		fmt.Fprintln(w, "Type I:", type1)
+		fmt.Fprintln(w, "Type II:", type2)
+		fmt.Fprintln(w, "Weaknesses:", weaknesses)
+		fmt.Fprintln(w, "Fast Attack(s):", fastattacks)
+		fmt.Fprintln(w, "Weight:", weight)
+		fmt.Fprintln(w, "Height:", height)
+
+	}
 
 }
 func moveHandler(w http.ResponseWriter, r *http.Request) {
