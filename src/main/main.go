@@ -6,6 +6,10 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
+
+	"github.com/gorilla/mux"
+	"github.com/jmoiron/jsonq"
 )
 
 type Type struct {
@@ -77,6 +81,7 @@ type BaseData struct {
 	Pokemons []Pokemon `json:"pokemons"`
 	Moves    []Move    `json:"moves"`
 }
+type BaseDataArr []BaseData
 
 func listHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("/list url:", r.URL)
@@ -102,17 +107,41 @@ func typeHandler(w http.ResponseWriter, r *http.Request) {
 		name := n[i].(map[string]interface{})["name"].(string)
 		ea := n[i].(map[string]interface{})["effectiveAgainst"].([]interface{})
 		wa := n[i].(map[string]interface{})["weakAgainst"].([]interface{})
+		fmt.Fprintln(w, "\nName:", name)
+		fmt.Fprintln(w, "Effective Against:", ea)
+		fmt.Fprintln(w, "Weak Against:", wa)
 
-		//types[i] = &Type{name, ea, wa}
+		/*//types[i] = &Type{name, ea, wa}
 		//fmt.Fprintln(w, moves[i])
 		//fmt.Fprintln(w, "\nName:", types[i].Name)
 		fmt.Fprintln(w, "\nName:", name)
 		//fmt.Fprintln(w, "Effective Against:", types[i].EffectiveAgainst)
 		fmt.Fprintln(w, "Effective Against:", ea)
 		//fmt.Fprintln(w, "Weak Against:", types[i].WeakAgainst)
-		fmt.Fprintln(w, "Weak Against:", wa)
+		fmt.Fprintln(w, "Weak Against:", wa)*/
 
 	}
+}
+func returnSingleType(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	key := vars["type"]
+	m := getData()
+
+	n := m["types"].([]interface{})
+	//types := make([]*Type, len(n))
+
+	for i := range n {
+
+		name := n[i].(map[string]interface{})["name"].(string)
+		ea := n[i].(map[string]interface{})["effectiveAgainst"].([]interface{})
+		wa := n[i].(map[string]interface{})["weakAgainst"].([]interface{})
+		if name == key {
+			fmt.Fprintln(w, "\nName:", name)
+			fmt.Fprintln(w, "Effective Against:", ea)
+			fmt.Fprintln(w, "Weak Against:", wa)
+		}
+	}
+	fmt.Println("Key: " + key)
 }
 func pokemonHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("/pokemons url:", r.URL)
@@ -120,6 +149,7 @@ func pokemonHandler(w http.ResponseWriter, r *http.Request) {
 	m := getData()
 
 	n := m["pokemons"].([]interface{})
+
 	//pokemons := make([]*Pokemon, len(n))
 
 	for i := range n {
@@ -181,9 +211,32 @@ func moveHandler(w http.ResponseWriter, r *http.Request) {
 func otherwise(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Welcome to Pokedex\n")
 
-}
-func listAll() {
+	/*b, m := readData()
+	fmt.Fprintln(w, b.Pokemons[0].Name)
 
+	fmt.Println(len(m))
+	for k, v := range m {
+		x := b.Pokemons[0].Name
+		fmt.Fprintln(w, x)
+		fmt.Println("\nk:", k)
+		fmt.Println("v:", v)
+	}*/
+
+}
+func readData() (BaseData, map[string]interface{}) {
+	log.Println("getData called")
+	content, err := ioutil.ReadFile("data.json")
+	if err != nil {
+		fmt.Print("Error:", err)
+	}
+	basedata := BaseData{}
+	m := make(map[string]interface{})
+	err = json.Unmarshal([]byte(content), &basedata)
+	err = json.Unmarshal([]byte(content), &m)
+	if err != nil {
+		fmt.Print("Error:", err)
+	}
+	return basedata, m
 }
 
 func getData() map[string]interface{} {
@@ -200,6 +253,19 @@ func getData() map[string]interface{} {
 		fmt.Print("Error:", err)
 	}
 	return m
+}
+func decodeData() *jsonq.JsonQuery {
+	content, err := ioutil.ReadFile("data.json")
+	if err != nil {
+		fmt.Print("Error:", err)
+	}
+	data := map[string]interface{}{}
+	dec := json.NewDecoder(strings.NewReader(string(content)))
+	dec.Decode(&data)
+	jq := jsonq.NewQuery(data)
+	jq.String("types")
+	return jq
+
 }
 
 func parseMap(aMap map[string]interface{}, w http.ResponseWriter, r *http.Request) {
@@ -242,14 +308,15 @@ func parseArray(anArray []interface{}, w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	//TODO: read data.json to a BaseData
-
-	http.HandleFunc("/list", listHandler)
-	http.HandleFunc("/get", getHandler)
-	http.HandleFunc("/types", typeHandler)
-	http.HandleFunc("/pokemons", pokemonHandler)
-	http.HandleFunc("/moves", moveHandler)
+	myRouter := mux.NewRouter().StrictSlash(true)
+	myRouter.HandleFunc("/list", listHandler)
+	myRouter.HandleFunc("/get", getHandler)
+	myRouter.HandleFunc("/types", typeHandler)
+	myRouter.HandleFunc("/pokemons", pokemonHandler)
+	myRouter.HandleFunc("/moves", moveHandler)
+	myRouter.HandleFunc("/types/{type}", returnSingleType)
 	//TODO: add more
-	http.HandleFunc("/", otherwise)
+	myRouter.HandleFunc("/", otherwise)
 	log.Println("starting server on :8080")
-	http.ListenAndServe(":8080", nil)
+	log.Fatal(http.ListenAndServe(":8080", myRouter))
 }
