@@ -6,10 +6,10 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strings"
+
+	"reflect"
 
 	"github.com/gorilla/mux"
-	"github.com/jmoiron/jsonq"
 )
 
 type Type struct {
@@ -81,12 +81,10 @@ type BaseData struct {
 	Pokemons []Pokemon `json:"pokemons"`
 	Moves    []Move    `json:"moves"`
 }
-type BaseDataArr []BaseData
 
 func listHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("/list url:", r.URL)
 	fmt.Fprint(w, "The List Handler\n")
-	fmt.Fprintln(w, r)
 }
 
 func getHandler(w http.ResponseWriter, r *http.Request) {
@@ -94,216 +92,138 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "The Get Handler\n")
 }
 
-func typeHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("/types url:", r.URL)
-	fmt.Fprint(w, "All of the pokemon types\n")
-	m := getData()
-
-	n := m["types"].([]interface{})
-	//types := make([]*Type, len(n))
-
-	for i := range n {
-
-		name := n[i].(map[string]interface{})["name"].(string)
-		ea := n[i].(map[string]interface{})["effectiveAgainst"].([]interface{})
-		wa := n[i].(map[string]interface{})["weakAgainst"].([]interface{})
-		fmt.Fprintln(w, "\nName:", name)
-		fmt.Fprintln(w, "Effective Against:", ea)
-		fmt.Fprintln(w, "Weak Against:", wa)
-
-		/*//types[i] = &Type{name, ea, wa}
-		//fmt.Fprintln(w, moves[i])
-		//fmt.Fprintln(w, "\nName:", types[i].Name)
-		fmt.Fprintln(w, "\nName:", name)
-		//fmt.Fprintln(w, "Effective Against:", types[i].EffectiveAgainst)
-		fmt.Fprintln(w, "Effective Against:", ea)
-		//fmt.Fprintln(w, "Weak Against:", types[i].WeakAgainst)
-		fmt.Fprintln(w, "Weak Against:", wa)*/
-
-	}
-}
+//Function to handle single Pokemon type request.
 func returnSingleType(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["type"]
-	m := getData()
-
-	n := m["types"].([]interface{})
-	//types := make([]*Type, len(n))
-
-	for i := range n {
-
-		name := n[i].(map[string]interface{})["name"].(string)
-		ea := n[i].(map[string]interface{})["effectiveAgainst"].([]interface{})
-		wa := n[i].(map[string]interface{})["weakAgainst"].([]interface{})
-		if name == key {
-			fmt.Fprintln(w, "\nName:", name)
-			fmt.Fprintln(w, "Effective Against:", ea)
-			fmt.Fprintln(w, "Weak Against:", wa)
+	b := readData()
+	for _, tip := range b.Types {
+		if tip.Name == key {
+			printType(tip, w, r)
 		}
 	}
+
 	fmt.Println("Key: " + key)
 }
+
+//Function to handle single Pokemon request.
+func returnSinglePokemon(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	key := vars["name"]
+	b := readData()
+	for _, pokemon := range b.Pokemons {
+		if pokemon.Name == key {
+			printPokemon(pokemon, w, r)
+		}
+	}
+
+	fmt.Println("Key: " + key)
+}
+
+//Function to handle single Pokemon Move request.
+func returnSingleMove(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	key := vars["name"]
+	b := readData()
+	for _, move := range b.Moves {
+		if move.Name == key {
+			printMove(move, w, r)
+		}
+	}
+
+	fmt.Println("Key: " + key)
+}
+
+//Lists all of Pokemons.
 func pokemonHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("/pokemons url:", r.URL)
 	fmt.Fprint(w, "All pokemons\n")
-	m := getData()
 
-	n := m["pokemons"].([]interface{})
-
-	//pokemons := make([]*Pokemon, len(n))
-
-	for i := range n {
-		number := n[i].(map[string]interface{})["Number"].(string)
-		name := n[i].(map[string]interface{})["Name"].(string)
-		classification := n[i].(map[string]interface{})["Classification"].(string)
-		type1 := n[i].(map[string]interface{})["Type I"].([]interface{})
-		type2 := n[i].(map[string]interface{})["Type II"]
-		weaknesses := n[i].(map[string]interface{})["Weaknesses"].([]interface{})
-		fastattacks := n[i].(map[string]interface{})["Fast Attack(s)"].([]interface{})
-		weight := n[i].(map[string]interface{})["Weight"].(string)
-		height := n[i].(map[string]interface{})["Height"].(string)
-
-		//pokemons[i] = &Pokemon{number, name, classification, type1, type2, weaknesses, fastattacks, weight, height}
-		//fmt.Fprintln(w, pokemons[i])
-		//fmt.Fprintln(w, "\nName:", types[i].Name)
-		fmt.Fprintln(w, "\nName:", name)
-		fmt.Fprintln(w, "Number:", number)
-		fmt.Fprintln(w, "Classification:", classification)
-		fmt.Fprintln(w, "Type I:", type1)
-		fmt.Fprintln(w, "Type II:", type2)
-		fmt.Fprintln(w, "Weaknesses:", weaknesses)
-		fmt.Fprintln(w, "Fast Attack(s):", fastattacks)
-		fmt.Fprintln(w, "Weight:", weight)
-		fmt.Fprintln(w, "Height:", height)
-
+	b := readData()
+	for _, pokemon := range b.Pokemons {
+		fmt.Fprintln(w, "\n")
+		printPokemon(pokemon, w, r)
 	}
 
 }
+
+//Lists all of Pokemon Moves.
 func moveHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("/moves url:", r.URL)
 	fmt.Fprint(w, "All moves\n")
-	m := getData()
 
-	n := m["moves"].([]interface{})
-	moves := make([]*Move, len(n))
+	b := readData()
+	for _, move := range b.Moves {
+		fmt.Fprintln(w, "\n")
+		printMove(move, w, r)
+	}
 
-	for i := range n {
-		id := n[i].(map[string]interface{})["id"].(float64)
-		name := n[i].(map[string]interface{})["name"].(string)
-		tip := n[i].(map[string]interface{})["type"].(string)
-		damage := n[i].(map[string]interface{})["damage"].(float64)
-		energy := n[i].(map[string]interface{})["energy"].(float64)
-		dps := n[i].(map[string]interface{})["dps"].(float64)
-		duration := n[i].(map[string]interface{})["duration"].(float64)
+}
 
-		moves[i] = &Move{int(id), name, tip, int(damage), int(energy), dps, int(duration)}
-		//fmt.Fprintln(w, moves[i])
-		fmt.Fprintln(w, "\nName:", moves[i].Name)
-		fmt.Fprintln(w, "ID:", moves[i].ID)
-		fmt.Fprintln(w, "Type:", moves[i].Type)
-		fmt.Fprintln(w, "Damage:", moves[i].Damage)
-		fmt.Fprintln(w, "Energy:", moves[i].Energy)
-		fmt.Fprintln(w, "Dps:", moves[i].Dps)
-		fmt.Fprintln(w, "Duration:", moves[i].Duration)
-
+//Lists all of the Pokemon Types.
+func typeHandler(w http.ResponseWriter, r *http.Request) {
+	log.Println("/types url:", r.URL)
+	fmt.Fprint(w, "All of the pokemon types\n")
+	b := readData()
+	for _, tip := range b.Types {
+		fmt.Fprintln(w, "\n")
+		printType(tip, w, r)
 	}
 }
+
+//Function for main page.Contains info about how to use.
 func otherwise(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "Welcome to Pokedex\n")
-
-	/*b, m := readData()
-	fmt.Fprintln(w, b.Pokemons[0].Name)
-
-	fmt.Println(len(m))
-	for k, v := range m {
-		x := b.Pokemons[0].Name
-		fmt.Fprintln(w, x)
-		fmt.Println("\nk:", k)
-		fmt.Println("v:", v)
-	}*/
-
+	fmt.Fprintln(w, " /types for all of the Pokemon types.\n /moves for all of the Pokemon moves.\n /pokemons for all of the Pokemons")
 }
-func readData() (BaseData, map[string]interface{}) {
+
+//Function to print Pokemon Move.
+func printMove(m Move, w http.ResponseWriter, r *http.Request) {
+	s := reflect.ValueOf(&m).Elem()
+	typeOfT := s.Type()
+	for i := 0; i < s.NumField(); i++ {
+		f := s.Field(i)
+		fmt.Fprintln(w, typeOfT.Field(i).Name, f.Interface())
+	}
+}
+
+//Function to print Pokemon.
+func printPokemon(p Pokemon, w http.ResponseWriter, r *http.Request) {
+	s := reflect.ValueOf(&p).Elem()
+	typeOfT := s.Type()
+	for i := 0; i < s.NumField(); i++ {
+		f := s.Field(i)
+		fmt.Fprintln(w, typeOfT.Field(i).Name, f.Interface())
+	}
+}
+
+//Function to print Pokemon Type.
+func printType(t Type, w http.ResponseWriter, r *http.Request) {
+	s := reflect.ValueOf(&t).Elem()
+	typeOfT := s.Type()
+	for i := 0; i < s.NumField(); i++ {
+		f := s.Field(i)
+		fmt.Fprintln(w, typeOfT.Field(i).Name, f.Interface())
+	}
+}
+
+//Function to use the data from JSON file.Returns BaseData.
+func readData() BaseData {
 	log.Println("getData called")
+	//Reads data from data.json
 	content, err := ioutil.ReadFile("data.json")
+	//error handling
 	if err != nil {
 		fmt.Print("Error:", err)
 	}
-	basedata := BaseData{}
-	m := make(map[string]interface{})
+	var basedata BaseData
+	//decoding JSON data into ByteData.
 	err = json.Unmarshal([]byte(content), &basedata)
-	err = json.Unmarshal([]byte(content), &m)
+	//error handling
 	if err != nil {
 		fmt.Print("Error:", err)
 	}
-	return basedata, m
-}
-
-func getData() map[string]interface{} {
-	log.Println("getData called")
-	content, err := ioutil.ReadFile("data.json")
-	if err != nil {
-		fmt.Print("Error:", err)
-	}
-	//var basedata BaseData
-	m := make(map[string]interface{})
-	//err = json.Unmarshal([]byte(content), &basedata)
-	err = json.Unmarshal([]byte(content), &m)
-	if err != nil {
-		fmt.Print("Error:", err)
-	}
-	return m
-}
-func decodeData() *jsonq.JsonQuery {
-	content, err := ioutil.ReadFile("data.json")
-	if err != nil {
-		fmt.Print("Error:", err)
-	}
-	data := map[string]interface{}{}
-	dec := json.NewDecoder(strings.NewReader(string(content)))
-	dec.Decode(&data)
-	jq := jsonq.NewQuery(data)
-	jq.String("types")
-	return jq
-
-}
-
-func parseMap(aMap map[string]interface{}, w http.ResponseWriter, r *http.Request) {
-
-	for key, value := range aMap {
-
-		switch concreteVal := value.(type) {
-		case map[string]interface{}:
-			fmt.Fprintln(w, key)
-			parseMap(value.(map[string]interface{}), w, r)
-		case []interface{}:
-			fmt.Fprintln(w, key)
-			parseArray(value.([]interface{}), w, r)
-		default:
-			fmt.Fprintln(w, key, ":", concreteVal)
-
-		}
-	}
-
-}
-
-func parseArray(anArray []interface{}, w http.ResponseWriter, r *http.Request) {
-
-	for i, val := range anArray {
-		switch concreteVal := val.(type) {
-		case map[string]interface{}:
-			//fmt.Println("Index:", i)
-
-			parseMap(val.(map[string]interface{}), w, r)
-		case []interface{}:
-			fmt.Println("Index:", i)
-			parseArray(val.([]interface{}), w, r)
-		default:
-			fmt.Fprintln(w, "-", concreteVal)
-			//fmt.Fprintln(w, "Index", i, ":", concreteVal)
-
-		}
-	}
+	return basedata
 }
 
 func main() {
@@ -315,6 +235,8 @@ func main() {
 	myRouter.HandleFunc("/pokemons", pokemonHandler)
 	myRouter.HandleFunc("/moves", moveHandler)
 	myRouter.HandleFunc("/types/{type}", returnSingleType)
+	myRouter.HandleFunc("/pokemons/{name}", returnSinglePokemon)
+	myRouter.HandleFunc("/moves/{name}", returnSingleMove)
 	//TODO: add more
 	myRouter.HandleFunc("/", otherwise)
 	log.Println("starting server on :8080")
