@@ -141,7 +141,7 @@ func pokemonHandler(w http.ResponseWriter, r *http.Request) {
 
 	b := readData()
 	for _, pokemon := range b.Pokemons {
-		fmt.Fprintln(w, "\n")
+		fmt.Fprintln(w)
 		printPokemon(pokemon, w, r)
 	}
 
@@ -154,7 +154,7 @@ func moveHandler(w http.ResponseWriter, r *http.Request) {
 
 	b := readData()
 	for _, move := range b.Moves {
-		fmt.Fprintln(w, "\n")
+		fmt.Fprintln(w)
 		printMove(move, w, r)
 	}
 
@@ -166,9 +166,22 @@ func typeHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "All of the pokemon types\n")
 	b := readData()
 	for _, tip := range b.Types {
-		fmt.Fprintln(w, "\n")
+		fmt.Fprintln(w)
 		printType(tip, w, r)
 	}
+}
+func test(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	key := vars["type"]
+	b := readData()
+	for _, pokemon := range b.Pokemons {
+		if pokemon.TypeI[0] == key /*|| pokemon.TypeII[0] == key */ {
+			fmt.Fprintln(w)
+			printPokemon(pokemon, w, r)
+		}
+	}
+
+	fmt.Fprintln(w, key)
 }
 
 //Function for main page.Contains info about how to use.
@@ -230,6 +243,7 @@ func main() {
 	//TODO: read data.json to a BaseData
 	myRouter := mux.NewRouter().StrictSlash(true)
 	myRouter.HandleFunc("/list", listHandler)
+	myRouter.HandleFunc("/list/{type}", test)
 	myRouter.HandleFunc("/get", getHandler)
 	myRouter.HandleFunc("/types", typeHandler)
 	myRouter.HandleFunc("/pokemons", pokemonHandler)
