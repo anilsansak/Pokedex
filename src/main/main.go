@@ -84,7 +84,7 @@ type BaseData struct {
 
 func listHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("/list url:", r.URL)
-	fmt.Fprint(w, "The List Handler\n")
+	fmt.Fprintln(w, "To list Pokemons by their type use /list/< insert type name here >  ")
 }
 
 func getHandler(w http.ResponseWriter, r *http.Request) {
@@ -170,15 +170,17 @@ func typeHandler(w http.ResponseWriter, r *http.Request) {
 		printType(tip, w, r)
 	}
 }
-func test(w http.ResponseWriter, r *http.Request) {
+func listByType(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["type"]
 	b := readData()
 	for _, pokemon := range b.Pokemons {
+		//TODO: check for TypeII
 		if pokemon.TypeI[0] == key /*|| pokemon.TypeII[0] == key */ {
 			fmt.Fprintln(w)
 			printPokemon(pokemon, w, r)
 		}
+
 	}
 
 	fmt.Fprintln(w, key)
@@ -243,7 +245,7 @@ func main() {
 	//TODO: read data.json to a BaseData
 	myRouter := mux.NewRouter().StrictSlash(true)
 	myRouter.HandleFunc("/list", listHandler)
-	myRouter.HandleFunc("/list/{type}", test)
+	myRouter.HandleFunc("/list/{type}", listByType)
 	myRouter.HandleFunc("/get", getHandler)
 	myRouter.HandleFunc("/types", typeHandler)
 	myRouter.HandleFunc("/pokemons", pokemonHandler)
