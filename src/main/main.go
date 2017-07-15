@@ -82,6 +82,7 @@ type BaseData struct {
 	Moves    []Move    `json:"moves"`
 }
 
+//Function to handle /list request
 func listHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("/list url:", r.URL)
 	fmt.Fprintln(w, "To list Pokemons by their type use /list/< insert type name here >  ")
@@ -96,42 +97,56 @@ func getHandler(w http.ResponseWriter, r *http.Request) {
 func returnSingleType(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["type"]
+	found := false
 	b := readData()
 	for _, tip := range b.Types {
 		if tip.Name == key {
 			printType(tip, w, r)
+			found = true
 		}
 	}
+	if found == false {
+		fmt.Fprintln(w, "Please check your input and do not forget to start with an uppercase. e.g: /types/Fire")
+	}
 
-	fmt.Println("Key: " + key)
+	log.Println("Key: " + key)
 }
 
 //Function to handle single Pokemon request.
 func returnSinglePokemon(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["name"]
+	found := false
 	b := readData()
 	for _, pokemon := range b.Pokemons {
 		if pokemon.Name == key {
 			printPokemon(pokemon, w, r)
+			found = true
 		}
 	}
+	if found == false {
+		fmt.Fprintln(w, "Please check your input and do not forget to start with an uppercase. e.g: /pokemons/Pikachu")
+	}
 
-	fmt.Println("Key: " + key)
+	log.Println("Key: " + key)
 }
 
 //Function to handle single Pokemon Move request.
 func returnSingleMove(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["name"]
+	found := false
 	b := readData()
 	for _, move := range b.Moves {
 		if move.Name == key {
 			printMove(move, w, r)
+			found = true
 		}
 	}
-
-	fmt.Println("Key: " + key)
+	if found == false {
+		fmt.Fprintln(w, "Please check your input and do not forget to start with an uppercase. e.g: /moves/Hyber Beam")
+	}
+	log.Println("Key: " + key)
 }
 
 //Lists all of Pokemons.
@@ -170,6 +185,8 @@ func typeHandler(w http.ResponseWriter, r *http.Request) {
 		printType(tip, w, r)
 	}
 }
+
+//Lists pokemon by their type.
 func listByType(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["type"]
@@ -188,8 +205,19 @@ func listByType(w http.ResponseWriter, r *http.Request) {
 
 //Function for main page.Contains info about how to use.
 func otherwise(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "Welcome to Pokedex\n")
-	fmt.Fprintln(w, " /types for all of the Pokemon types.\n /moves for all of the Pokemon moves.\n /pokemons for all of the Pokemons")
+	fmt.Fprintln(w, "Welcome to Pokedex")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "/types for all of the Pokemon types.")
+	fmt.Fprintln(w, "/types/< insert type here > to see information about given type. e.g: /types/Water")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "/moves for all of the Pokemon moves.")
+	fmt.Fprintln(w, "/moves/< insert move here > to see information about given move. e.g: /moves/Flamethrower")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "/pokemons for all of the Pokemons.")
+	fmt.Fprintln(w, "/pokemons/< insert pokemon here > to see information about given pokemon. e.g: /pokemons/Oddish")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "/list/< insert type here > to list Pokemons by the given type. e.g: /list/Fire")
+
 }
 
 //Function to print Pokemon Move.
