@@ -219,6 +219,12 @@ func otherwise(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "/list/< insert type here > to list Pokemons by the given type. e.g: /list/Fire")
 
 }
+func errorHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	key := vars["path"]
+	fmt.Println("Wrong path.You have entered:", key)
+	http.Redirect(w, r, "http://localhost:8080", 301)
+}
 
 //Function to print Pokemon Move.
 func printMove(m Move, w http.ResponseWriter, r *http.Request) {
@@ -270,7 +276,7 @@ func readData() BaseData {
 }
 
 func main() {
-	//TODO: read data.json to a BaseData
+
 	myRouter := mux.NewRouter().StrictSlash(true)
 	myRouter.HandleFunc("/list", listHandler)
 	myRouter.HandleFunc("/list/{type}", listByType)
@@ -281,8 +287,9 @@ func main() {
 	myRouter.HandleFunc("/types/{type}", returnSingleType)
 	myRouter.HandleFunc("/pokemons/{name}", returnSinglePokemon)
 	myRouter.HandleFunc("/moves/{name}", returnSingleMove)
-	//TODO: add more
+	myRouter.HandleFunc("/{path}", errorHandler)
 	myRouter.HandleFunc("/", otherwise)
+
 	log.Println("starting server on :8080")
 	log.Fatal(http.ListenAndServe(":8080", myRouter))
 }
