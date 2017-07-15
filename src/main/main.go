@@ -83,6 +83,7 @@ type BaseData struct {
 	Types    []Type    `json:"types"`
 	Pokemons []Pokemon `json:"pokemons"`
 	Moves    []Move    `json:"moves"`
+	by       func(p1, p2 *Pokemon) bool
 }
 
 //Function to handle /list request
@@ -194,6 +195,7 @@ func listByType(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["type"]
 	key2 := vars["sort"]
+
 	fmt.Println(key2)
 	b := readData()
 	for _, pokemon := range b.Pokemons {
@@ -212,13 +214,36 @@ func sortHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["sort"]
 	log.Println(key)
-
 	b := readData()
-	sort.Sort(&b)
+
+	height := func(p1, p2 *Pokemon) bool {
+		return p1.Height > p2.Height
+	}
+	weight := func(p1, p2 *Pokemon) bool {
+		return p1.Weight > p2.Weight
+	}
+	baseattack := func(p1, p2 *Pokemon) bool {
+		return p1.BaseAttack > p2.BaseAttack
+	}
+	basedefense := func(p1, p2 *Pokemon) bool {
+		return p1.BaseDefense > p2.BaseDefense
+	}
+	switch key {
+	case "Height":
+		By(height).Sort(b.Pokemons)
+	case "Weight":
+		By(weight).Sort(b.Pokemons)
+	case "BaseAttack":
+		By(baseattack).Sort(b.Pokemons)
+	case "BaseDefense":
+		By(basedefense).Sort(b.Pokemons)
+	}
+
 	for _, c := range b.Pokemons {
 		fmt.Fprintln(w)
 		printPokemon(c, w, r)
 	}
+
 }
 
 //Function for main page.Contains info about how to use.
@@ -276,15 +301,17 @@ func printType(t Type, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-/*func sortByName() {
+//By is used for advanced sorting
+type By func(p1, p2 *Pokemon) bool
 
+//Sort is redefined for advanced sorting
+func (by By) Sort(p []Pokemon) {
+	ps := &BaseData{
+		Pokemons: p,
+		by:       by,
+	}
+	sort.Sort(ps)
 }
-
-type By func(p1, p2 *BaseData) bool
-
-func (by By) Sort(pokemons []Pokemon){
-	p := &
-}*/
 
 //Len is a part of sort.Interface
 func (slice *BaseData) Len() int {
@@ -293,7 +320,7 @@ func (slice *BaseData) Len() int {
 
 //Less is a part of sort.Interface
 func (slice *BaseData) Less(i, j int) bool {
-	return slice.Pokemons[i].BaseAttack > slice.Pokemons[j].BaseAttack
+	return slice.by(&slice.Pokemons[i], &slice.Pokemons[j])
 }
 
 //Swap is a part of sort.Interface
@@ -301,7 +328,7 @@ func (slice *BaseData) Swap(i, j int) {
 	slice.Pokemons[i], slice.Pokemons[j] = slice.Pokemons[j], slice.Pokemons[i]
 }
 
-//Function to use the data from JSON file.Returns BaseData.
+//Function to use the data from JSON file. Returns BaseData.
 func readData() BaseData {
 	log.Println("getData called")
 	//Reads data from data.json
