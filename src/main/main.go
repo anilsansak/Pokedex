@@ -6,12 +6,14 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"sort"
 
 	"reflect"
 
 	"github.com/gorilla/mux"
 )
 
+//Type struct
 type Type struct {
 	// Name of the type
 	Name string `json:"name"`
@@ -21,6 +23,7 @@ type Type struct {
 	WeakAgainst []string `json:"weakAgainst"`
 }
 
+//Pokemon struct
 type Pokemon struct {
 	Number         string   `json:"Number"`
 	Name           string   `json:"Name"`
@@ -190,6 +193,8 @@ func typeHandler(w http.ResponseWriter, r *http.Request) {
 func listByType(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["type"]
+	key2 := vars["sort"]
+	fmt.Println(key2)
 	b := readData()
 	for _, pokemon := range b.Pokemons {
 		//TODO: check for TypeII
@@ -201,6 +206,19 @@ func listByType(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprintln(w, key)
+}
+
+func sortHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	key := vars["sort"]
+	log.Println(key)
+
+	b := readData()
+	sort.Sort(&b)
+	for _, c := range b.Pokemons {
+		fmt.Fprintln(w)
+		printPokemon(c, w, r)
+	}
 }
 
 //Function for main page.Contains info about how to use.
@@ -223,10 +241,7 @@ func otherwise(w http.ResponseWriter, r *http.Request) {
 
 //Function to handle wrong path names.
 func errorHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	key := vars["path"]
-	//Printing the wrong path so that user would see his/her mistake.
-	fmt.Println("Wrong path.You have entered:", key)
+	//If input is not an accepted one,redirect to home page.
 	//Redirecting to the home page.
 	http.Redirect(w, r, "http://localhost:8080", 301)
 }
@@ -261,6 +276,31 @@ func printType(t Type, w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+/*func sortByName() {
+
+}
+
+type By func(p1, p2 *BaseData) bool
+
+func (by By) Sort(pokemons []Pokemon){
+	p := &
+}*/
+
+//Len is a part of sort.Interface
+func (slice *BaseData) Len() int {
+	return len(slice.Pokemons)
+}
+
+//Less is a part of sort.Interface
+func (slice *BaseData) Less(i, j int) bool {
+	return slice.Pokemons[i].BaseAttack > slice.Pokemons[j].BaseAttack
+}
+
+//Swap is a part of sort.Interface
+func (slice *BaseData) Swap(i, j int) {
+	slice.Pokemons[i], slice.Pokemons[j] = slice.Pokemons[j], slice.Pokemons[i]
+}
+
 //Function to use the data from JSON file.Returns BaseData.
 func readData() BaseData {
 	log.Println("getData called")
@@ -285,6 +325,7 @@ func main() {
 	myRouter := mux.NewRouter().StrictSlash(true)
 	myRouter.HandleFunc("/list", listHandler)
 	myRouter.HandleFunc("/list/{type}", listByType)
+	myRouter.HandleFunc("/list/{type}/sortBy{sort}", sortHandler)
 	myRouter.HandleFunc("/get", getHandler)
 	myRouter.HandleFunc("/types", typeHandler)
 	myRouter.HandleFunc("/pokemons", pokemonHandler)
