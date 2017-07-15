@@ -205,6 +205,7 @@ func listByType(w http.ResponseWriter, r *http.Request) {
 
 //Function for main page.Contains info about how to use.
 func otherwise(w http.ResponseWriter, r *http.Request) {
+	//Prints information about how to use.
 	fmt.Fprintln(w, "Welcome to Pokedex")
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "/types for all of the Pokemon types.")
@@ -219,10 +220,14 @@ func otherwise(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "/list/< insert type here > to list Pokemons by the given type. e.g: /list/Fire")
 
 }
+
+//Function to handle wrong path names.
 func errorHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["path"]
+	//Printing the wrong path so that user would see his/her mistake.
 	fmt.Println("Wrong path.You have entered:", key)
+	//Redirecting to the home page.
 	http.Redirect(w, r, "http://localhost:8080", 301)
 }
 
