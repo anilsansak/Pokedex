@@ -112,6 +112,7 @@ func returnSingleType(w http.ResponseWriter, r *http.Request) {
 			found = true
 		}
 	}
+	//Error handling.
 	if found == false {
 		fmt.Fprintln(w, "Please check your input and do not forget to start with an uppercase. e.g: /types/Fire")
 	}
@@ -130,6 +131,7 @@ func returnSinglePokemon(w http.ResponseWriter, r *http.Request) {
 			found = true
 		}
 	}
+	//error handling
 	if found == false {
 		fmt.Fprintln(w, "Please check your input and do not forget to start with an uppercase. e.g: /pokemons/Pikachu")
 	}
@@ -148,6 +150,7 @@ func returnSingleMove(w http.ResponseWriter, r *http.Request) {
 			found = true
 		}
 	}
+	//Error handling.
 	if found == false {
 		fmt.Fprintln(w, "Please check your input and do not forget to start with an uppercase. e.g: /moves/Hyber Beam")
 	}
@@ -196,9 +199,13 @@ func listByType(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["type"]
 	key2 := vars["sort"]
+	//variables for input checking.
+	keyfound := false
+	nokey2 := false
 
 	b := readData()
 
+	//Definitons for sorting inputs.
 	height := func(p1, p2 *Pokemon) bool {
 		return p1.Height > p2.Height
 	}
@@ -224,34 +231,54 @@ func listByType(w http.ResponseWriter, r *http.Request) {
 		return p1.BuddyDistanceNeeded > p2.BuddyDistanceNeeded
 	}
 
+	//Switch-case for sorting inputs.
 	switch key2 {
 	case "Height":
 		By(height).Sort(b.Pokemons)
+
 	case "Weight":
 		By(weight).Sort(b.Pokemons)
+
 	case "BaseAttack":
 		By(baseattack).Sort(b.Pokemons)
+
 	case "BaseDefense":
 		By(basedefense).Sort(b.Pokemons)
+
 	case "BaseStamina":
 		By(basestamina).Sort(b.Pokemons)
+
 	case "CaptureRate":
 		By(capturerate).Sort(b.Pokemons)
+
 	case "FleeRate":
 		By(fleerate).Sort(b.Pokemons)
+
 	case "BuddyDistanceNeeded":
 		By(buddydistanceneeded).Sort(b.Pokemons)
+
+	case "":
+
+	default:
+		//Error handling.
+		fmt.Fprintln(w, " Please check your input. e.g: /list/Fire/sortByBaseAttack ")
+		nokey2 = true
 	}
 
-	for _, pokemon := range b.Pokemons {
-		//TODO: check for TypeII
-		if pokemon.TypeI[0] == key /*|| pokemon.TypeII[0] == key */ {
-			fmt.Fprintln(w)
-			printPokemon(pokemon, w, r)
+	if nokey2 != true {
+		for _, pokemon := range b.Pokemons {
+			//TODO: check for TypeII
+			if pokemon.TypeI[0] == key /*|| pokemon.TypeII[0] == key */ {
+				fmt.Fprintln(w)
+				keyfound = true
+				printPokemon(pokemon, w, r)
+			}
+
 		}
-
+		if keyfound == false {
+			fmt.Fprintln(w, "Please check your input and do not forget to start with an uppercase. e.g: /list/Water")
+		}
 	}
-
 }
 
 //Function for main page.Contains info about how to use.
@@ -364,6 +391,7 @@ func main() {
 	myRouter.HandleFunc("/list", listHandler)
 	myRouter.HandleFunc("/list/{type}", listByType)
 	myRouter.HandleFunc("/list/{type}/sortBy{sort}", listByType)
+	myRouter.HandleFunc("/list/{type}/{error}", errorHandler)
 	myRouter.HandleFunc("/types", typeHandler)
 	myRouter.HandleFunc("/pokemons", pokemonHandler)
 	myRouter.HandleFunc("/moves", moveHandler)
@@ -371,6 +399,7 @@ func main() {
 	myRouter.HandleFunc("/pokemons/{name}", returnSinglePokemon)
 	myRouter.HandleFunc("/moves/{name}", returnSingleMove)
 	myRouter.HandleFunc("/{path}", errorHandler)
+	myRouter.HandleFunc("/{err}/{error}", errorHandler)
 	myRouter.HandleFunc("/", otherwise)
 
 	log.Println("starting server on :8080")
