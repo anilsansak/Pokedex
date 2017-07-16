@@ -86,15 +86,18 @@ type BaseData struct {
 	by       func(p1, p2 *Pokemon) bool
 }
 
-//Function to handle /list request
+//Function to handle /list request. Contains information about instructions.
 func listHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("/list url:", r.URL)
-	fmt.Fprintln(w, "To list Pokemons by their type use /list/< insert type name here >  ")
-}
-
-func getHandler(w http.ResponseWriter, r *http.Request) {
-	log.Println("/get url:", r.URL)
-	fmt.Fprint(w, "The Get Handler\n")
+	fmt.Fprintln(w, "To list Pokemons by their type, use /list/< insert type name here >. e.g: /list/Fire  ")
+	fmt.Fprintln(w, "To sort Pokemons by their Height, use /list/<insert type here>/sortByHeight e.g: /list/Fire/sortByHeight ")
+	fmt.Fprintln(w, "To sort Pokemons by their Weight, use /list/<insert type here>/sortByWeight e.g: /list/Fire/sortByWeight")
+	fmt.Fprintln(w, "To sort Pokemons by their Base Attacks, use /list/<insert type here>/sortByBaseAttack e.g: /list/Fire/sortByBaseAttack")
+	fmt.Fprintln(w, "To sort Pokemons by their Base Defenses, use /list/<insert type here>/sortByBaseDefense e.g: /list/Fire/sortByBaseDefense")
+	fmt.Fprintln(w, "To sort Pokemons by their Base Stamina, use /list/<insert type here>/sortByBaseStamina e.g: /list/Fire/sortByBaseStamina")
+	fmt.Fprintln(w, "To sort Pokemons by their Capture Rates, use /list/<insert type here>/sortByCaptureRate e.g: /list/Fire/sortByCaptureRate")
+	fmt.Fprintln(w, "To sort Pokemons by their Flee Rates, use /list/<insert type here>/sortByFleeRate e.g: /list/Fire/sortByFleeRate")
+	fmt.Fprintln(w, "To sort Pokemons by their Buddy Distances Needed, use /list/<insert type here>/sortByBuddyDistanceNeeded e.g: /list/Fire/sortByBuddyDistanceNeeded")
 }
 
 //Function to handle single Pokemon type request.
@@ -113,7 +116,6 @@ func returnSingleType(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "Please check your input and do not forget to start with an uppercase. e.g: /types/Fire")
 	}
 
-	log.Println("Key: " + key)
 }
 
 //Function to handle single Pokemon request.
@@ -132,7 +134,6 @@ func returnSinglePokemon(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "Please check your input and do not forget to start with an uppercase. e.g: /pokemons/Pikachu")
 	}
 
-	log.Println("Key: " + key)
 }
 
 //Function to handle single Pokemon Move request.
@@ -150,7 +151,7 @@ func returnSingleMove(w http.ResponseWriter, r *http.Request) {
 	if found == false {
 		fmt.Fprintln(w, "Please check your input and do not forget to start with an uppercase. e.g: /moves/Hyber Beam")
 	}
-	log.Println("Key: " + key)
+
 }
 
 //Lists all of Pokemons.
@@ -190,30 +191,12 @@ func typeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//Lists pokemon by their type.
+//Lists pokemon by their type. Can also sort them by the input.
 func listByType(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	key := vars["type"]
 	key2 := vars["sort"]
 
-	fmt.Println(key2)
-	b := readData()
-	for _, pokemon := range b.Pokemons {
-		//TODO: check for TypeII
-		if pokemon.TypeI[0] == key /*|| pokemon.TypeII[0] == key */ {
-			fmt.Fprintln(w)
-			printPokemon(pokemon, w, r)
-		}
-
-	}
-
-	fmt.Fprintln(w, key)
-}
-
-func sortHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	key := vars["sort"]
-	log.Println(key)
 	b := readData()
 
 	height := func(p1, p2 *Pokemon) bool {
@@ -228,7 +211,20 @@ func sortHandler(w http.ResponseWriter, r *http.Request) {
 	basedefense := func(p1, p2 *Pokemon) bool {
 		return p1.BaseDefense > p2.BaseDefense
 	}
-	switch key {
+	basestamina := func(p1, p2 *Pokemon) bool {
+		return p1.BaseStamina > p2.BaseStamina
+	}
+	capturerate := func(p1, p2 *Pokemon) bool {
+		return p1.CaptureRate > p2.CaptureRate
+	}
+	fleerate := func(p1, p2 *Pokemon) bool {
+		return p1.FleeRate > p2.FleeRate
+	}
+	buddydistanceneeded := func(p1, p2 *Pokemon) bool {
+		return p1.BuddyDistanceNeeded > p2.BuddyDistanceNeeded
+	}
+
+	switch key2 {
 	case "Height":
 		By(height).Sort(b.Pokemons)
 	case "Weight":
@@ -237,18 +233,30 @@ func sortHandler(w http.ResponseWriter, r *http.Request) {
 		By(baseattack).Sort(b.Pokemons)
 	case "BaseDefense":
 		By(basedefense).Sort(b.Pokemons)
+	case "BaseStamina":
+		By(basestamina).Sort(b.Pokemons)
+	case "CaptureRate":
+		By(capturerate).Sort(b.Pokemons)
+	case "FleeRate":
+		By(fleerate).Sort(b.Pokemons)
+	case "BuddyDistanceNeeded":
+		By(buddydistanceneeded).Sort(b.Pokemons)
 	}
 
-	for _, c := range b.Pokemons {
-		fmt.Fprintln(w)
-		printPokemon(c, w, r)
+	for _, pokemon := range b.Pokemons {
+		//TODO: check for TypeII
+		if pokemon.TypeI[0] == key /*|| pokemon.TypeII[0] == key */ {
+			fmt.Fprintln(w)
+			printPokemon(pokemon, w, r)
+		}
+
 	}
 
 }
 
 //Function for main page.Contains info about how to use.
 func otherwise(w http.ResponseWriter, r *http.Request) {
-	//Prints information about how to use.
+	//Prints instructions.
 	fmt.Fprintln(w, "Welcome to Pokedex")
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "/types for all of the Pokemon types.")
@@ -261,6 +269,9 @@ func otherwise(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "/pokemons/< insert pokemon here > to see information about given pokemon. e.g: /pokemons/Oddish")
 	fmt.Fprintln(w)
 	fmt.Fprintln(w, "/list/< insert type here > to list Pokemons by the given type. e.g: /list/Fire")
+	fmt.Fprintln(w, "/list/< insert type here >/sortBy<insert sorting criteria here > to list Pokemons by the given type and sort them by the given criteria.")
+	fmt.Fprintln(w)
+	fmt.Fprintln(w, "For more detailed information about /list , go to /list")
 
 }
 
@@ -330,7 +341,7 @@ func (slice *BaseData) Swap(i, j int) {
 
 //Function to use the data from JSON file. Returns BaseData.
 func readData() BaseData {
-	log.Println("getData called")
+
 	//Reads data from data.json
 	content, err := ioutil.ReadFile("data.json")
 	//error handling
@@ -352,8 +363,7 @@ func main() {
 	myRouter := mux.NewRouter().StrictSlash(true)
 	myRouter.HandleFunc("/list", listHandler)
 	myRouter.HandleFunc("/list/{type}", listByType)
-	myRouter.HandleFunc("/list/{type}/sortBy{sort}", sortHandler)
-	myRouter.HandleFunc("/get", getHandler)
+	myRouter.HandleFunc("/list/{type}/sortBy{sort}", listByType)
 	myRouter.HandleFunc("/types", typeHandler)
 	myRouter.HandleFunc("/pokemons", pokemonHandler)
 	myRouter.HandleFunc("/moves", moveHandler)
